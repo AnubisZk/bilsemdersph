@@ -12,7 +12,7 @@ const schema = {
         type: "object",
         properties: {
           codes: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 1 },
-          studentIds: { type: "array", items: { type: "string" } },
+          studentIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 },
           day: { type: "string" },
           time: { type: "string" },
           teacher: { type: "string" },
@@ -40,6 +40,7 @@ const instructions = [
   "Sarı öğrenci erken periyotlara önceliklidir; mavi öğrenci hafta içi yalnız 2. veya 3. periyoda; turuncu öğrenci yalnız Cumartesiye yerleştirilir.",
   "Aynı ders kodundaki öğrenciler aynı gruptur. Öğrenci ve öğretmen çakışmalarını engelle.",
   "Her assignment içinde yalnız o grupta bulunan öğrencilerin gerçek id değerlerini studentIds alanında döndür; öğrenci uydurma ve bir öğrenciyi almadığı derse ekleme.",
+  "Ders kodunu öğrencinin lessons alanında yazıldığı biçimle harfiyen kopyala; kısaltma, yeniden adlandırma veya yeni kod üretme.",
   "Grupları mümkünse 3-5 kişi oluştur; gerekirse BYF/ÖYG için 8'e kadar çık. Proje kodlarında 3'ü aşma. 1-2 kişilik grubu yalnız zorunluysa kullan.",
   "P ile başlayan proje ders kodlarında bir gruba en fazla 3 öğrenci, diğer BYF/ÖYG gruplarında en fazla 8 öğrenci ata.",
   "Bir ders kodunda bu sayıdan fazla öğrenci varsa kapasiteyi aşan tek grup üretme; yerleştiremiyorsan nedenini warnings alanına yaz.",
@@ -68,7 +69,7 @@ async function claude(input) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model, max_tokens: 6000, system: instructions, messages: [{ role: "user", content: input }], output_config: { effort: "low", format: { type: "json_schema", schema } } }),
+    body: JSON.stringify({ model, max_tokens: 12000, system: instructions, messages: [{ role: "user", content: input }], output_config: { effort: "low", format: { type: "json_schema", schema } } }),
   });
   const body = await response.json();if(!response.ok)throw new Error(body?.error?.message||"Claude API hatası.");const text=(body.content||[]).find(item=>item.type==="text")?.text||"";return{parsed:JSON.parse(text),provider:"Claude",model};
 }
