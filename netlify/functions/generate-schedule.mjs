@@ -36,7 +36,7 @@ const instructions = [
   "Her öğrencinin iki dersini aynı gün ve mutlaka art arda gelen iki farklı periyoda yerleştir; iki ders arasında boş periyot veya gün farkı olamaz.",
   "Her assignment tam olarak bir ders kodunu, bir öğretmeni ve seçeneklerde verilen tek bir saat bloğunu temsil etsin. İki ders kodunu, iki öğretmeni veya iki periyodu aynı assignment içinde kesinlikle birleştirme.",
   "Öğrencinin iki dersi için aynı studentId ile iki ayrı assignment üret; birini ilk periyoda, diğerini hemen sonraki periyoda yaz.",
-  "Hafta içi öğleden sonra periyotları 14:40-16:10, 16:20-17:50, 18:00-19:30'dur. Cuma günü seçeneklerde verilen 09:00-10:30 ile 10:40-12:10 sabah çifti de Müzik/Resim istisnası için kullanılabilir; 10:40-12:10 ile 14:40-16:10 ardışık sayılmaz. Cumartesi 09:00-10:30 kullanılmaz ve son periyot 16:00-17:30'dur.",
+  "Hafta içi öğleden sonra periyotları 14:40-16:10, 16:20-17:50, 18:00-19:30'dur. Cuma günü seçeneklerde verilen 09:00-10:30 ile 10:40-12:10 sabah çifti de Müzik/Resim istisnası için kullanılabilir; 10:40-12:10 ile 14:40-16:10 ardışık sayılmaz. Cumartesi 09:00-10:30 yalnız BYF ve Proje gruplarına açıktır; ÖYG grubu bu periyotta olamaz. P ile başlayan kod Proje, B/BYF ile başlayan kod BYF, diğer kodlar ÖYG kabul edilir. Cumartesi son periyot 16:00-17:30'dur.",
   "Sarı öğrenci erken periyotlara önceliklidir; mavi öğrenci hafta içi yalnız 2. veya 3. periyoda; turuncu öğrenci yalnız Cumartesiye yerleştirilir.",
   "Aynı ders kodundaki öğrenciler aynı gruptur. Öğrenci ve öğretmen çakışmalarını engelle.",
   "Her assignment içinde yalnız o grupta bulunan öğrencilerin gerçek id değerlerini studentIds alanında döndür; öğrenci uydurma ve bir öğrenciyi almadığı derse ekleme.",
