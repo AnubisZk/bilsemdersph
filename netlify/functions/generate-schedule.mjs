@@ -11,7 +11,7 @@ const schema = {
       items: {
         type: "object",
         properties: {
-          codes: { type: "array", items: { type: "string" } },
+          codes: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 1 },
           studentIds: { type: "array", items: { type: "string" } },
           day: { type: "string" },
           time: { type: "string" },
@@ -34,6 +34,8 @@ const instructions = [
   "Yalnız verilen günleri ve saat bloklarını kullan; saati değiştirme veya yeni saat uydurma.",
   "Ana ÖYG kuralını kesin uygula: turuncu olmayan 7. sınıf öğrencisi Salı, turuncu olmayan 8. sınıf öğrencisi Çarşamba, turuncu öğrenci yalnız Cumartesi gelir.",
   "Her öğrencinin iki dersini aynı gün ve mutlaka art arda gelen iki farklı periyoda yerleştir; iki ders arasında boş periyot veya gün farkı olamaz.",
+  "Her assignment tam olarak bir ders kodunu, bir öğretmeni ve seçeneklerde verilen tek bir saat bloğunu temsil etsin. İki ders kodunu, iki öğretmeni veya iki periyodu aynı assignment içinde kesinlikle birleştirme.",
+  "Öğrencinin iki dersi için aynı studentId ile iki ayrı assignment üret; birini ilk periyoda, diğerini hemen sonraki periyoda yaz.",
   "Hafta içi periyotları 14:40-16:10, 16:20-17:50, 18:00-19:30'dur. Cumartesi 09:00-10:30 kullanılmaz ve son periyot 16:00-17:30'dur.",
   "Sarı öğrenci erken periyotlara önceliklidir; mavi öğrenci hafta içi yalnız 2. veya 3. periyoda; turuncu öğrenci yalnız Cumartesiye yerleştirilir.",
   "Aynı ders kodundaki öğrenciler aynı gruptur. Öğrenci ve öğretmen çakışmalarını engelle.",
