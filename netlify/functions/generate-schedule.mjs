@@ -32,7 +32,7 @@ const instructions = [
   "Sen BİLSEM için ders programı optimizasyon uzmanısın.",
   "Girdideki her öğrenci-ders eşleşmesini tam bir kez programa yerleştir. Aynı ders kodunu farklı studentIds alt gruplarıyla birden fazla assignment satırında kullanabilirsin.",
   "Yalnız verilen günleri ve saat bloklarını kullan; saati değiştirme veya yeni saat uydurma.",
-  "Ana ÖYG kuralını kesin uygula: turuncu olmayan 7. sınıf öğrencisi Salı, turuncu olmayan 8. sınıf öğrencisi Çarşamba, turuncu öğrenci yalnız Cumartesi gelir.",
+  "Ana ÖYG kuralını kesin uygula: turuncu olmayan 7. sınıf öğrencisi Salı, turuncu olmayan 8. sınıf öğrencisi Çarşamba, turuncu öğrenci yalnız Cumartesi gelir. artDayException=true olan Müzik/Resim öğrencisi istisnadır ve gerektiğinde Salı veya Çarşamba günlerinden birine alınabilir; yine yalnız tek gün gelir ve iki dersi o gün art arda kalır.",
   "Her öğrencinin iki dersini aynı gün ve mutlaka art arda gelen iki farklı periyoda yerleştir; iki ders arasında boş periyot veya gün farkı olamaz.",
   "Her assignment tam olarak bir ders kodunu, bir öğretmeni ve seçeneklerde verilen tek bir saat bloğunu temsil etsin. İki ders kodunu, iki öğretmeni veya iki periyodu aynı assignment içinde kesinlikle birleştirme.",
   "Öğrencinin iki dersi için aynı studentId ile iki ayrı assignment üret; birini ilk periyoda, diğerini hemen sonraki periyoda yaz.",
@@ -47,6 +47,7 @@ const instructions = [
   "Öğretmen kod eşlemelerini, yazılı kuralları, vardiyaları, okul türü tercihlerini, önceki programı ve günlük sınırları uygula.",
   "Kodları yalnız birleştirme açık ve uyumluysa birleştir; öğrenci üst sınırını aşma.",
   "Yerleştirilemeyen bir kod varsa assignments içine uydurma satır ekleme, nedenini warnings alanına yaz.",
+  "Bir öğrenci yerleştirilemiyorsa warnings alanında öğrenci id değerini, ders kodunu ve kesin engeli açıkça belirt; öğrenciyi sessizce atlama.",
 ].join(" ");
 
 function openAIText(response) {
@@ -80,7 +81,7 @@ export default async (request) => {
     const payload=await request.json(),provider=payload.provider||"auto";if(!["auto","openai","anthropic"].includes(provider))return json({error:"Geçersiz AI sağlayıcısı."},400);
     if(!Array.isArray(payload.students)||!payload.students.length)return json({error:"Program için öğrenci verisi bulunamadı."},400);
     const selected=provider==="auto"?(process.env.OPENAI_API_KEY?"openai":"anthropic"):provider;if(selected==="anthropic"&&!process.env.ANTHROPIC_API_KEY)return json({error:"Claude için Netlify’da ANTHROPIC_API_KEY tanımlanmalı."},503);if(selected==="openai"&&!process.env.OPENAI_API_KEY)return json({error:"OpenAI için Netlify’da OPENAI_API_KEY tanımlanmalı."},503);
-    const studentList=payload.students.slice(0,1500),buckets=new Map();for(const student of studentList){const color=String(student.color||"").toLocaleLowerCase("tr-TR"),grade=String(student.grade||"");const targetDay=color==="turuncu"?"Cumartesi":grade.trim().startsWith("7")?"Salı":grade.trim().startsWith("8")?"Çarşamba":"Diğer";buckets.set(targetDay,[...(buckets.get(targetDay)||[]),student])}const batches=[...buckets].filter(([,items])=>items.length);const inputs=batches.map(([targetDay,students])=>JSON.stringify({targetDay,students,options:payload.options}));if(inputs.some(input=>input.length>900000))return json({error:"Excel verisi AI isteği için çok büyük."},413);
-    const results=await Promise.all(inputs.map(input=>selected==="anthropic"?claude(input):openAI(input))),assignments=results.flatMap(result=>Array.isArray(result.parsed.assignments)?result.parsed.assignments:[]),warnings=results.flatMap((result,index)=>[`${batches[index][0]} grubu AI tarafından ayrı planlandı.`,...(Array.isArray(result.parsed.warnings)?result.parsed.warnings:[])]),first=results[0];return json({assignments,warnings,provider:first?.provider||(selected==="anthropic"?"Claude":"OpenAI"),model:first?.model||""});
+    const studentList=payload.students.slice(0,1500).map(student=>({...student,lessons:Array.isArray(student.lessons)?student.lessons.slice(0,2):[]})),input=JSON.stringify({students:studentList,options:payload.options});if(input.length>900000)return json({error:"Excel verisi AI isteği için çok büyük."},413);
+    const result=selected==="anthropic"?await claude(input):await openAI(input),assignments=Array.isArray(result.parsed.assignments)?result.parsed.assignments:[],warnings=["Bütün öğrenciler öğretmen çakışmaları ve Müzik/Resim gün istisnasıyla tek model çağrısında birlikte planlandı.",...(Array.isArray(result.parsed.warnings)?result.parsed.warnings:[])];return json({assignments,warnings,provider:result.provider,model:result.model});
   }catch(error){return json({error:error instanceof Error?error.message:"AI programı oluşturulamadı."},502)}
 };
