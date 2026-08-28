@@ -56,7 +56,7 @@ async function openAI(input) {
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({ model, store: false, instructions, input, reasoning: { effort: "high" }, text: { format: { type: "json_schema", name: "bilsem_schedule", strict: true, schema } } }),
+    body: JSON.stringify({ model, store: false, instructions, input, reasoning: { effort: "medium" }, text: { format: { type: "json_schema", name: "bilsem_schedule", strict: true, schema } } }),
   });
   const body = await response.json();if(!response.ok)throw new Error(body?.error?.message||"OpenAI API hatası.");return{parsed:JSON.parse(openAIText(body)),provider:"OpenAI",model};
 }
@@ -66,7 +66,7 @@ async function claude(input) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model, max_tokens: 12000, system: instructions, messages: [{ role: "user", content: input }], output_config: { effort: "high", format: { type: "json_schema", schema } } }),
+    body: JSON.stringify({ model, max_tokens: 7000, system: instructions, messages: [{ role: "user", content: input }], output_config: { effort: "medium", format: { type: "json_schema", schema } } }),
   });
   const body = await response.json();if(!response.ok)throw new Error(body?.error?.message||"Claude API hatası.");const text=(body.content||[]).find(item=>item.type==="text")?.text||"";return{parsed:JSON.parse(text),provider:"Claude",model};
 }
@@ -77,7 +77,7 @@ export default async (request) => {
     const payload=await request.json(),provider=payload.provider||"auto";if(!["auto","openai","anthropic"].includes(provider))return json({error:"Geçersiz AI sağlayıcısı."},400);
     if(!Array.isArray(payload.students)||!payload.students.length)return json({error:"Program için öğrenci verisi bulunamadı."},400);
     const selected=provider==="auto"?(process.env.ANTHROPIC_API_KEY?"anthropic":"openai"):provider;if(selected==="anthropic"&&!process.env.ANTHROPIC_API_KEY)return json({error:"Claude için Netlify’da ANTHROPIC_API_KEY tanımlanmalı."},503);if(selected==="openai"&&!process.env.OPENAI_API_KEY)return json({error:"OpenAI için Netlify’da OPENAI_API_KEY tanımlanmalı."},503);
-    const input=JSON.stringify({students:payload.students.slice(0,1500),options:payload.options});if(input.length>900000)return json({error:"Excel verisi AI isteği için çok büyük."},413);
-    const result=selected==="anthropic"?await claude(input):await openAI(input);return json({assignments:Array.isArray(result.parsed.assignments)?result.parsed.assignments:[],warnings:Array.isArray(result.parsed.warnings)?result.parsed.warnings:[],provider:result.provider,model:result.model});
+    const studentList=payload.students.slice(0,1500),buckets=new Map();for(const student of studentList){const color=String(student.color||"").toLocaleLowerCase("tr-TR"),grade=String(student.grade||"");const targetDay=color==="turuncu"?"Cumartesi":grade.trim().startsWith("7")?"Salı":grade.trim().startsWith("8")?"Çarşamba":"Diğer";buckets.set(targetDay,[...(buckets.get(targetDay)||[]),student])}const batches=[...buckets].filter(([,items])=>items.length);const inputs=batches.map(([targetDay,students])=>JSON.stringify({targetDay,students,options:payload.options}));if(inputs.some(input=>input.length>900000))return json({error:"Excel verisi AI isteği için çok büyük."},413);
+    const results=await Promise.all(inputs.map(input=>selected==="anthropic"?claude(input):openAI(input))),assignments=results.flatMap(result=>Array.isArray(result.parsed.assignments)?result.parsed.assignments:[]),warnings=results.flatMap((result,index)=>[`${batches[index][0]} grubu AI tarafından ayrı planlandı.`,...(Array.isArray(result.parsed.warnings)?result.parsed.warnings:[])]),first=results[0];return json({assignments,warnings,provider:first?.provider||(selected==="anthropic"?"Claude":"OpenAI"),model:first?.model||""});
   }catch(error){return json({error:error instanceof Error?error.message:"AI programı oluşturulamadı."},502)}
 };
