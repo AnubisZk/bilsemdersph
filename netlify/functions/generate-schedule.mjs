@@ -52,7 +52,7 @@ function openAIText(response) {
 }
 
 async function openAI(input) {
-  const model = process.env.OPENAI_SCHEDULE_MODEL || process.env.OPENAI_RULE_MODEL || "gpt-5.4";
+  const model = process.env.OPENAI_SCHEDULE_MODEL || "gpt-5-mini";
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "content-type": "application/json" },
@@ -76,7 +76,7 @@ export default async (request) => {
   try{
     const payload=await request.json(),provider=payload.provider||"auto";if(!["auto","openai","anthropic"].includes(provider))return json({error:"Geçersiz AI sağlayıcısı."},400);
     if(!Array.isArray(payload.students)||!payload.students.length)return json({error:"Program için öğrenci verisi bulunamadı."},400);
-    const selected=provider==="auto"?(process.env.ANTHROPIC_API_KEY?"anthropic":"openai"):provider;if(selected==="anthropic"&&!process.env.ANTHROPIC_API_KEY)return json({error:"Claude için Netlify’da ANTHROPIC_API_KEY tanımlanmalı."},503);if(selected==="openai"&&!process.env.OPENAI_API_KEY)return json({error:"OpenAI için Netlify’da OPENAI_API_KEY tanımlanmalı."},503);
+    const selected=provider==="auto"?(process.env.OPENAI_API_KEY?"openai":"anthropic"):provider;if(selected==="anthropic"&&!process.env.ANTHROPIC_API_KEY)return json({error:"Claude için Netlify’da ANTHROPIC_API_KEY tanımlanmalı."},503);if(selected==="openai"&&!process.env.OPENAI_API_KEY)return json({error:"OpenAI için Netlify’da OPENAI_API_KEY tanımlanmalı."},503);
     const studentList=payload.students.slice(0,1500),buckets=new Map();for(const student of studentList){const color=String(student.color||"").toLocaleLowerCase("tr-TR"),grade=String(student.grade||"");const targetDay=color==="turuncu"?"Cumartesi":grade.trim().startsWith("7")?"Salı":grade.trim().startsWith("8")?"Çarşamba":"Diğer";buckets.set(targetDay,[...(buckets.get(targetDay)||[]),student])}const batches=[...buckets].filter(([,items])=>items.length);const inputs=batches.map(([targetDay,students])=>JSON.stringify({targetDay,students,options:payload.options}));if(inputs.some(input=>input.length>900000))return json({error:"Excel verisi AI isteği için çok büyük."},413);
     const results=await Promise.all(inputs.map(input=>selected==="anthropic"?claude(input):openAI(input))),assignments=results.flatMap(result=>Array.isArray(result.parsed.assignments)?result.parsed.assignments:[]),warnings=results.flatMap((result,index)=>[`${batches[index][0]} grubu AI tarafından ayrı planlandı.`,...(Array.isArray(result.parsed.warnings)?result.parsed.warnings:[])]),first=results[0];return json({assignments,warnings,provider:first?.provider||(selected==="anthropic"?"Claude":"OpenAI"),model:first?.model||""});
   }catch(error){return json({error:error instanceof Error?error.message:"AI programı oluşturulamadı."},502)}
