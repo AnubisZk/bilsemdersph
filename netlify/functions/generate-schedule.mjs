@@ -55,11 +55,11 @@ function openAIText(response) {
 }
 
 async function openAI(input) {
-  const model = process.env.OPENAI_SCHEDULE_MODEL || "gpt-4.1-mini";
+  const model = process.env.OPENAI_SCHEDULE_MODEL || process.env.OPENAI_RULE_MODEL || "gpt-5.4";
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({ model, store: false, instructions, input, text: { format: { type: "json_schema", name: "bilsem_schedule", strict: true, schema } } }),
+    body: JSON.stringify({ model, store: false, instructions, input, reasoning: { effort: "high" }, text: { format: { type: "json_schema", name: "bilsem_schedule", strict: true, schema } } }),
   });
   const body = await response.json();if(!response.ok)throw new Error(body?.error?.message||"OpenAI API hatası.");return{parsed:JSON.parse(openAIText(body)),provider:"OpenAI",model};
 }
