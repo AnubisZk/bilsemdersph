@@ -32,6 +32,8 @@ const instructions = [
   "Girdideki her benzersiz ders kodunu mümkünse tam bir kez programa yerleştir.",
   "Yalnız verilen günleri ve saat bloklarını kullan; saati değiştirme veya yeni saat uydurma.",
   "Aynı ders kodundaki öğrenciler tek gruptur. Öğrenci ve öğretmen çakışmalarını engelle.",
+  "P ile başlayan proje ders kodlarında bir gruba en fazla 3 öğrenci, diğer BYF/ÖYG gruplarında en fazla 8 öğrenci ata.",
+  "Bir ders kodunda bu sayıdan fazla öğrenci varsa kapasiteyi aşan tek grup üretme; yerleştiremiyorsan nedenini warnings alanına yaz.",
   "Öğretmen kod eşlemelerini, yazılı kuralları, vardiyaları, okul türü tercihlerini, önceki programı ve günlük sınırları uygula.",
   "Kodları yalnız birleştirme açık ve uyumluysa birleştir; öğrenci üst sınırını aşma.",
   "Yerleştirilemeyen bir kod varsa assignments içine uydurma satır ekleme, nedenini warnings alanına yaz.",
